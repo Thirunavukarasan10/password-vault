@@ -1,50 +1,66 @@
 import Link from "next/link";
 import { useVault } from "../context/VaultContext";
+import Button from "../components/Button";
+import PasswordCard from "../components/PasswordCard";
+
+import { useEffect } from "react";
+import { useRouter } from "next/router";
 
 export default function DashboardPage() {
-  const { currentUser, passwordEntries, deletePasswordEntry } = useVault();
+  const { currentUser, passwordEntries, deletePasswordEntry, loading } = useVault();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && !currentUser) {
+      router.replace("/login");
+    }
+  }, [loading, currentUser, router]);
+
+  if (!currentUser) return null;
 
   return (
-    <section className="grid gap-6">
+    <section className="grid gap-8">
       <div className="flex items-end justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold">Dashboard</h1>
-          <p className="text-slate-600">{currentUser ? `Welcome, ${currentUser.name}` : "You are viewing demo data."}</p>
+          <p className="text-slate-600 dark:text-slate-300">{currentUser ? `Welcome, ${currentUser.name}` : "Please log in to access your vault."}</p>
         </div>
-        <Link href="/add-password" className="px-4 py-2 rounded bg-indigo-600 text-white hover:bg-indigo-500">Add Password</Link>
+        <Link href="/add-password" className="hidden sm:inline-flex">
+          <Button>Add Password</Button>
+        </Link>
       </div>
 
-      <div className="overflow-hidden rounded border">
-        <table className="min-w-full divide-y divide-slate-200">
-          <thead className="bg-slate-50 text-left text-sm font-semibold text-slate-700">
-            <tr>
-              <th className="px-4 py-3">Service</th>
-              <th className="px-4 py-3">Username</th>
-              <th className="px-4 py-3">Password</th>
-              <th className="px-4 py-3 w-56">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-200 bg-white">
+      <div className="grid gap-6 md:grid-cols-3">
+        <section className="md:col-span-2 grid gap-4">
+          <h2 className="text-xl font-semibold">My Vault</h2>
+          {loading && <p className="text-sm text-slate-500">Loading...</p>}
+          <div className="grid gap-4 sm:grid-cols-2">
             {passwordEntries.map((item) => (
-              <tr key={item.id}>
-                <td className="px-4 py-3 font-medium">{item.serviceName}</td>
-                <td className="px-4 py-3">{item.username}</td>
-                <td className="px-4 py-3 font-mono">{item.password}</td>
-                <td className="px-4 py-3">
-                  <div className="flex gap-2">
-                    <button className="px-3 py-1.5 text-sm rounded border hover:bg-slate-50" onClick={() => alert("Edit coming soon")}>Edit</button>
-                    <button className="px-3 py-1.5 text-sm rounded border border-red-300 text-red-700 hover:bg-red-50" onClick={() => deletePasswordEntry(item.id)}>Delete</button>
-                  </div>
-                </td>
-              </tr>
+              <PasswordCard key={item.id} item={item} onDelete={deletePasswordEntry} />
             ))}
-            {passwordEntries.length === 0 && (
-              <tr>
-                <td colSpan={4} className="px-4 py-10 text-center text-slate-600">No entries yet. Click &quot;Add Password&quot; to create one.</td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+          </div>
+          {passwordEntries.length === 0 && !loading && (
+            <p className="text-slate-600 dark:text-slate-300">No entries yet. Use "Add Password" to create one.</p>
+          )}
+        </section>
+
+        <aside className="grid gap-6">
+          <section className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
+            <h3 className="text-lg font-semibold">Add Password</h3>
+            <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">Create a new credential entry.</p>
+            <Link href="/add-password" className="mt-3 inline-flex">
+              <Button className="w-full">Add</Button>
+            </Link>
+          </section>
+
+          <section className="rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
+            <h3 className="text-lg font-semibold">Profile</h3>
+            <div className="mt-2 text-sm text-slate-700 dark:text-slate-300">
+              <p>Email: {currentUser?.email || "-"}</p>
+            </div>
+            <Button variant="secondary" className="mt-3" href="/" as={Link}>Logout</Button>
+          </section>
+        </aside>
       </div>
     </section>
   );

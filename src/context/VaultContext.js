@@ -1,5 +1,6 @@
-import { createContext, useContext, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/router";
+import { api, decodeJwtPayload, getToken, setToken } from "../lib/api";
 
 const VaultContext = createContext(undefined);
 
@@ -7,54 +8,78 @@ function generateId() {
   return `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 }
 
-const initialPasswords = [
-  {
-    id: generateId(),
-    serviceName: "Gmail",
-    username: "alice@example.com",
-    password: "S3cur3!Pass",
-  },
-  {
-    id: generateId(),
-    serviceName: "GitHub",
-    username: "alice",
-    password: "Gh!b2025#",
-  },
-];
+const initialPasswords = [];
 
 export function VaultProvider({ children }) {
   const router = useRouter();
 
   const [currentUser, setCurrentUser] = useState(null);
   const [passwordEntries, setPasswordEntries] = useState(initialPasswords);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  function registerUser(name, email) {
-    setCurrentUser({ name, email });
+  // Hydrate from token on first load
+  useEffect(() => {
+    const existing = getToken();
+    if (!existing) {
+      setLoading(false);
+      return;
+    }
+    const payload = decodeJwtPayload(existing);
+    if (!payload) {
+      setToken(null);
+      setLoading(false);
+      return;
+    }
+    setCurrentUser({ id: payload.userId, name: payload.name, email: payload.email });
+    api
+      .listPasswords()
+      .then((list) => setPasswordEntries(list))
+      .catch(() => setPasswordEntries([]))
+      .finally(() => setLoading(false));
+  }, []);
+
+  async function registerUser(name, email, password) {
+    setError(null);
+    await api.register({ name, email, password });
+    // After registration, immediately login
+    const { token, user } = await api.login({ email, password });
+    setToken(token);
+    setCurrentUser(user);
+    const list = await api.listPasswords().catch(() => []);
+    setPasswordEntries(list);
   }
 
-  function loginUser(email) {
-    const derivedName = email?.split("@")[0] || "User";
-    setCurrentUser({ name: derivedName, email });
+  async function loginUser(email, password) {
+    setError(null);
+    const { token, user } = await api.login({ email, password });
+    setToken(token);
+    setCurrentUser(user);
+    const list = await api.listPasswords().catch(() => []);
+    setPasswordEntries(list);
   }
 
   function logoutUser() {
+    setToken(null);
     setCurrentUser(null);
+    setPasswordEntries([]);
     router.push("/");
   }
 
-  function addPasswordEntry(entry) {
-    const newEntry = { ...entry, id: generateId() };
-    setPasswordEntries((prev) => [newEntry, ...prev]);
-    return newEntry.id;
+  async function addPasswordEntry(entry) {
+    const res = await api.createPassword(entry);
+    const newItem = { id: res.id, ...entry };
+    setPasswordEntries((prev) => [newItem, ...prev]);
+    return newItem.id;
   }
 
-  function updatePasswordEntry(id, updates) {
-    setPasswordEntries((prev) =>
-      prev.map((e) => (e.id === id ? { ...e, ...updates } : e))
-    );
+  async function updatePasswordEntry(id, updates) {
+    await api.updatePassword({ id, ...updates });
+    setPasswordEntries((prev) => prev.map((e) => (e.id === id ? { ...e, ...updates } : e)));
   }
 
-  function deletePasswordEntry(id) {
+  async function deletePasswordEntry(id) {
+    await api.deletePassword(id);
     setPasswordEntries((prev) => prev.filter((e) => e.id !== id));
   }
 
@@ -62,6 +87,8 @@ export function VaultProvider({ children }) {
     () => ({
       currentUser,
       passwordEntries,
+      loading,
+      error,
       registerUser,
       loginUser,
       logoutUser,
@@ -69,7 +96,7 @@ export function VaultProvider({ children }) {
       updatePasswordEntry,
       deletePasswordEntry,
     }),
-    [currentUser, passwordEntries, registerUser, loginUser, logoutUser]
+    [currentUser, passwordEntries, loading, error]
   );
 
   return <VaultContext.Provider value={value}>{children}</VaultContext.Provider>;

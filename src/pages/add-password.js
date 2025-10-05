@@ -1,6 +1,9 @@
 import { useState } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/router";
 import { useVault } from "../context/VaultContext";
+import Button from "../components/Button";
+import Input from "../components/Input";
 
 function generatePassword({ length, useLower, useUpper, useDigits, useSymbols, excludeSimilar }) {
   const lower = "abcdefghijklmnopqrstuvwxyz";
@@ -28,7 +31,15 @@ function generatePassword({ length, useLower, useUpper, useDigits, useSymbols, e
 
 export default function AddPasswordPage() {
   const router = useRouter();
-  const { addPasswordEntry } = useVault();
+  const { addPasswordEntry, currentUser, loading } = useVault();
+  useEffect(() => {
+    if (!loading && !currentUser) {
+      router.replace("/login");
+    }
+  }, [loading, currentUser, router]);
+
+  if (!currentUser) return null;
+
   const [form, setForm] = useState({ serviceName: "", username: "", password: "" });
   const [length, setLength] = useState(16);
   const [opts, setOpts] = useState({ useLower: true, useUpper: true, useDigits: true, useSymbols: true, excludeSimilar: true });
@@ -43,46 +54,44 @@ export default function AddPasswordPage() {
     setForm((f) => ({ ...f, password: pwd }));
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     if (!form.serviceName.trim() || !form.username.trim() || !form.password.trim()) {
       alert("Please fill in all fields");
       return;
     }
-    addPasswordEntry({
-      serviceName: form.serviceName.trim(),
-      username: form.username.trim(),
-      password: form.password,
-    });
-    router.push("/dashboard");
+    try {
+      await addPasswordEntry({
+        serviceName: form.serviceName.trim(),
+        username: form.username.trim(),
+        password: form.password,
+      });
+      router.push("/dashboard");
+    } catch (err) {
+      alert(err?.data?.error || err?.message || "Failed to save");
+    }
   }
 
   return (
     <section className="max-w-2xl mx-auto grid gap-6">
       <div className="flex items-end justify-between gap-4">
         <h1 className="text-3xl font-bold">Add Password</h1>
-        <button onClick={() => router.push("/dashboard")} className="px-4 py-2 rounded border hover:bg-slate-50">Cancel</button>
+        <Button variant="outline" onClick={() => router.push("/dashboard")}>Cancel</Button>
       </div>
 
-      <form onSubmit={handleSubmit} className="grid gap-5 bg-white rounded border p-4">
+      <form onSubmit={handleSubmit} className="grid gap-5 rounded border p-4 bg-white dark:border-slate-700 dark:bg-slate-800">
+        <Input label="Service Name" name="serviceName" value={form.serviceName} onChange={handleChange} placeholder="e.g. Gmail" />
+        <Input label="Username" name="username" value={form.username} onChange={handleChange} placeholder="e.g. alice@example.com" />
         <div>
-          <label className="block text-sm font-medium">Service Name</label>
-          <input name="serviceName" value={form.serviceName} onChange={handleChange} className="mt-1 w-full rounded border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="e.g. Gmail" />
-        </div>
-        <div>
-          <label className="block text-sm font-medium">Username</label>
-          <input name="username" value={form.username} onChange={handleChange} className="mt-1 w-full rounded border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="e.g. alice@example.com" />
-        </div>
-        <div>
-          <label className="block text-sm font-medium">Password</label>
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Password</label>
           <div className="flex gap-2">
-            <input name="password" value={form.password} onChange={handleChange} className="mt-1 w-full rounded border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Click Generate" />
-            <button type="button" onClick={handleGenerate} className="mt-1 px-4 py-2 rounded bg-slate-900 text-white hover:bg-slate-700">Generate</button>
+            <Input name="password" value={form.password} onChange={handleChange} placeholder="Click Generate" />
+            <Button type="button" onClick={handleGenerate}>Generate</Button>
           </div>
         </div>
 
         <fieldset className="grid gap-3">
-          <legend className="text-sm font-semibold text-slate-700">Generator options</legend>
+          <legend className="text-sm font-semibold text-slate-700 dark:text-slate-300">Generator options</legend>
           <div className="flex items-center gap-3">
             <label className="text-sm">Length: <span className="font-medium">{length}</span></label>
             <input type="range" min={8} max={64} value={length} onChange={(e)=>setLength(parseInt(e.target.value, 10))} />
@@ -98,8 +107,8 @@ export default function AddPasswordPage() {
         </fieldset>
 
         <div className="flex gap-3">
-          <button type="submit" className="px-5 py-2.5 rounded bg-indigo-600 text-white hover:bg-indigo-500">Save</button>
-          <button type="button" onClick={() => router.push("/dashboard")} className="px-5 py-2.5 rounded border hover:bg-slate-50">Cancel</button>
+          <Button type="submit">Save</Button>
+          <Button type="button" variant="outline" onClick={() => router.push("/dashboard")}>Cancel</Button>
         </div>
       </form>
     </section>

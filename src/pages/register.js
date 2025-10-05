@@ -2,6 +2,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useVault } from "../context/VaultContext";
+import Button from "../components/Button";
+import Input from "../components/Input";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -23,61 +25,56 @@ export default function RegisterPage() {
     return Object.keys(next).length === 0;
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     if (!validate()) return;
-    registerUser(form.name.trim(), form.email.trim());
-    router.push("/dashboard");
+    try {
+      await registerUser(form.name.trim(), form.email.trim(), form.password);
+      router.push("/dashboard");
+    } catch (err) {
+      const apiError = err?.data?.error || err?.message || "Registration failed";
+      setErrors((prev) => ({ ...prev, api: apiError }));
+    }
   }
 
   return (
     <section className="max-w-md mx-auto">
       <h1 className="text-3xl font-bold">Create your account</h1>
-      <p className="mt-2 text-slate-600">Join Password Vault and start managing your credentials.</p>
+      <p className="mt-2 text-slate-600 dark:text-slate-300">Join Password Vault and start managing your credentials.</p>
 
       <form onSubmit={handleSubmit} className="mt-6 grid gap-4">
-        <div>
-          <label className="block text-sm font-medium">Name</label>
-          <input
-            name="name"
-            value={form.name}
-            onChange={handleChange}
-            className="mt-1 w-full rounded border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            placeholder="Jane Doe"
-          />
-          {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name}</p>}
-        </div>
-        <div>
-          <label className="block text-sm font-medium">Email</label>
-          <input
-            type="email"
-            name="email"
-            value={form.email}
-            onChange={handleChange}
-            className="mt-1 w-full rounded border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            placeholder="you@example.com"
-          />
-          {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
-        </div>
-        <div>
-          <label className="block text-sm font-medium">Password</label>
-          <input
-            type="password"
-            name="password"
-            value={form.password}
-            onChange={handleChange}
-            className="mt-1 w-full rounded border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            placeholder="••••••••"
-          />
-          {errors.password && <p className="mt-1 text-sm text-red-600">{errors.password}</p>}
-        </div>
-        <button type="submit" className="mt-2 rounded bg-indigo-600 text-white py-2.5 px-4 hover:bg-indigo-500">
-          Register
-        </button>
+        <Input
+          label="Name"
+          name="name"
+          value={form.name}
+          onChange={handleChange}
+          placeholder="Jane Doe"
+          error={errors.name}
+        />
+        <Input
+          label="Email"
+          type="email"
+          name="email"
+          value={form.email}
+          onChange={handleChange}
+          placeholder="you@example.com"
+          error={errors.email}
+        />
+        <Input
+          label="Password"
+          type="password"
+          name="password"
+          value={form.password}
+          onChange={handleChange}
+          placeholder="••••••••"
+          error={errors.password}
+        />
+        {errors.api && <p className="text-sm text-rose-500">{errors.api}</p>}
+        <Button type="submit" className="mt-2">Register</Button>
       </form>
 
-      <p className="mt-4 text-sm text-slate-700">
-        Already have an account? <Link className="text-indigo-600 hover:underline" href="/login">Log in</Link>
+      <p className="mt-4 text-sm text-slate-700 dark:text-slate-300">
+        Already have an account? <Link className="text-teal-600 dark:text-teal-400 hover:underline" href="/login">Log in</Link>
       </p>
     </section>
   );
