@@ -1,50 +1,98 @@
-import Link from "next/link";
-import { useVault } from "../context/VaultContext";
+import { useEffect, useState } from "react";
+import { useAuth } from "../context/AuthContext";
+import { useApi } from "../lib/api";
+import PasswordCard from "../components/PasswordCard";
+import Button from "../components/Button";
 
 export default function DashboardPage() {
-  const { currentUser, passwordEntries, deletePasswordEntry } = useVault();
+  const { user, loading } = useAuth();
+  const api = useApi();
+  const [items, setItems] = useState([]);
+  const [form, setForm] = useState({ serviceName: "", username: "", password: "" });
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const data = await api.get("/api/passwords");
+        setItems(data);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function addItem(e) {
+    e.preventDefault();
+    if (!form.serviceName || !form.username || !form.password) return;
+    setSubmitting(true);
+    try {
+      const { id } = await api.post("/api/passwords", form);
+      setItems((prev) => [{ id, ...form }, ...prev]);
+      setForm({ serviceName: "", username: "", password: "" });
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function deleteItem(id) {
+    try {
+      await api.del(`/api/passwords?id=${id}`);
+      setItems((prev) => prev.filter((it) => it.id !== id));
+    } catch (err) {
+      alert(err.message);
+    }
+  }
 
   return (
-    <section className="grid gap-6">
-      <div className="flex items-end justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold">Dashboard</h1>
-          <p className="text-slate-600">{currentUser ? `Welcome, ${currentUser.name}` : "You are viewing demo data."}</p>
-        </div>
-        <Link href="/add-password" className="px-4 py-2 rounded bg-indigo-600 text-white hover:bg-indigo-500">Add Password</Link>
+    <section className="grid gap-8">
+      <div className="grid gap-1">
+        <h1 className="text-3xl font-bold">Dashboard</h1>
+        <p className="text-slate-300">{!loading && user ? `Welcome, ${user.name}` : ""}</p>
       </div>
 
-      <div className="overflow-hidden rounded border">
-        <table className="min-w-full divide-y divide-slate-200">
-          <thead className="bg-slate-50 text-left text-sm font-semibold text-slate-700">
-            <tr>
-              <th className="px-4 py-3">Service</th>
-              <th className="px-4 py-3">Username</th>
-              <th className="px-4 py-3">Password</th>
-              <th className="px-4 py-3 w-56">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-200 bg-white">
-            {passwordEntries.map((item) => (
-              <tr key={item.id}>
-                <td className="px-4 py-3 font-medium">{item.serviceName}</td>
-                <td className="px-4 py-3">{item.username}</td>
-                <td className="px-4 py-3 font-mono">{item.password}</td>
-                <td className="px-4 py-3">
-                  <div className="flex gap-2">
-                    <button className="px-3 py-1.5 text-sm rounded border hover:bg-slate-50" onClick={() => alert("Edit coming soon")}>Edit</button>
-                    <button className="px-3 py-1.5 text-sm rounded border border-red-300 text-red-700 hover:bg-red-50" onClick={() => deletePasswordEntry(item.id)}>Delete</button>
-                  </div>
-                </td>
-              </tr>
+      <div className="grid md:grid-cols-3 gap-6">
+        <div className="md:col-span-2 grid gap-4">
+          <h2 className="text-xl font-semibold">My Vault</h2>
+          <div className="grid gap-3">
+            {items.map((item) => (
+              <PasswordCard key={item.id} item={item} onDelete={deleteItem} />
             ))}
-            {passwordEntries.length === 0 && (
-              <tr>
-                <td colSpan={4} className="px-4 py-10 text-center text-slate-600">No entries yet. Click &quot;Add Password&quot; to create one.</td>
-              </tr>
+            {items.length === 0 && (
+              <p className="text-slate-400">No entries yet. Use the form to add one.</p>
             )}
-          </tbody>
-        </table>
+          </div>
+        </div>
+
+        <div className="grid gap-4">
+          <h2 className="text-xl font-semibold">Add Password</h2>
+          <form onSubmit={addItem} className="grid gap-3 p-4 rounded border border-slate-700 bg-slate-900">
+            <label className="grid gap-1 text-sm">
+              <span>Service Name</span>
+              <input className="rounded bg-slate-800 border border-slate-700 px-3 py-2" value={form.serviceName} onChange={(e)=>setForm((f)=>({...f, serviceName: e.target.value}))} />
+            </label>
+            <label className="grid gap-1 text-sm">
+              <span>Username</span>
+              <input className="rounded bg-slate-800 border border-slate-700 px-3 py-2" value={form.username} onChange={(e)=>setForm((f)=>({...f, username: e.target.value}))} />
+            </label>
+            <label className="grid gap-1 text-sm">
+              <span>Password</span>
+              <input className="rounded bg-slate-800 border border-slate-700 px-3 py-2" value={form.password} onChange={(e)=>setForm((f)=>({...f, password: e.target.value}))} />
+            </label>
+            <Button disabled={submitting} variant="primary" type="submit">{submitting ? "Saving..." : "Save"}</Button>
+          </form>
+
+          <div className="grid gap-2">
+            <h2 className="text-xl font-semibold">Profile</h2>
+            <div className="rounded border border-slate-700 bg-slate-900 p-4 text-sm">
+              <div>Email: {user?.email ?? "-"}</div>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
   );

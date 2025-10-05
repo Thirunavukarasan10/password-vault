@@ -1,11 +1,11 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { useVault } from "../context/VaultContext";
+import { useAuth } from "../context/AuthContext";
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { registerUser } = useVault();
+  const { register } = useAuth();
   const [form, setForm] = useState({ name: "", email: "", password: "" });
   const [errors, setErrors] = useState({});
 
@@ -23,17 +23,21 @@ export default function RegisterPage() {
     return Object.keys(next).length === 0;
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     if (!validate()) return;
-    registerUser(form.name.trim(), form.email.trim());
-    router.push("/dashboard");
+    try {
+      await register({ name: form.name.trim(), email: form.email.trim(), password: form.password });
+      router.push("/dashboard");
+    } catch (err) {
+      alert(err.message);
+    }
   }
 
   return (
     <section className="max-w-md mx-auto">
       <h1 className="text-3xl font-bold">Create your account</h1>
-      <p className="mt-2 text-slate-600">Join Password Vault and start managing your credentials.</p>
+      <p className="mt-2 text-slate-300">Join Password Vault and start managing your credentials.</p>
 
       <form onSubmit={handleSubmit} className="mt-6 grid gap-4">
         <div>
@@ -42,10 +46,10 @@ export default function RegisterPage() {
             name="name"
             value={form.name}
             onChange={handleChange}
-            className="mt-1 w-full rounded border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="mt-1 w-full rounded bg-slate-800 border border-slate-700 px-3 py-2 text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500"
             placeholder="Jane Doe"
           />
-          {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name}</p>}
+          {errors.name && <p className="mt-1 text-sm text-rose-400">{errors.name}</p>}
         </div>
         <div>
           <label className="block text-sm font-medium">Email</label>
@@ -54,10 +58,10 @@ export default function RegisterPage() {
             name="email"
             value={form.email}
             onChange={handleChange}
-            className="mt-1 w-full rounded border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="mt-1 w-full rounded bg-slate-800 border border-slate-700 px-3 py-2 text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500"
             placeholder="you@example.com"
           />
-          {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
+          {errors.email && <p className="mt-1 text-sm text-rose-400">{errors.email}</p>}
         </div>
         <div>
           <label className="block text-sm font-medium">Password</label>
@@ -66,18 +70,18 @@ export default function RegisterPage() {
             name="password"
             value={form.password}
             onChange={handleChange}
-            className="mt-1 w-full rounded border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="mt-1 w-full rounded bg-slate-800 border border-slate-700 px-3 py-2 text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500"
             placeholder="••••••••"
           />
-          {errors.password && <p className="mt-1 text-sm text-red-600">{errors.password}</p>}
+          {errors.password && <p className="mt-1 text-sm text-rose-400">{errors.password}</p>}
         </div>
-        <button type="submit" className="mt-2 rounded bg-indigo-600 text-white py-2.5 px-4 hover:bg-indigo-500">
+        <button type="submit" className="mt-2 rounded bg-teal-600 text-white py-2.5 px-4 hover:bg-teal-500">
           Register
         </button>
       </form>
 
-      <p className="mt-4 text-sm text-slate-700">
-        Already have an account? <Link className="text-indigo-600 hover:underline" href="/login">Log in</Link>
+      <p className="mt-4 text-sm text-slate-300">
+        Already have an account? <Link className="text-teal-400 hover:underline" href="/login">Log in</Link>
       </p>
     </section>
   );

@@ -4,12 +4,15 @@ html, body, #__next {
   height: 100%;
 }
 
-/* App base styles */
-body {
-  @apply bg-white text-slate-900 antialiased;
+/* Default dark theme */
+:root {
+  color-scheme: dark;
 }
 
-/* Utility tweaks */
+body {
+  @apply bg-slate-950 text-slate-100 antialiased;
+}
+
 .container-center {
   @apply max-w-5xl mx-auto px-4;
 }
