@@ -1,5 +1,5 @@
-import { connectToDatabase } from 'lib/mongodb';
-import { requireAuth } from 'lib/auth';
+import { connectToDatabase } from '@/lib/mongodb';
+import { requireAuth } from '@/lib/auth';
 
 export default async function handler(req, res) {
   console.log("🔵 ADD endpoint hit");
