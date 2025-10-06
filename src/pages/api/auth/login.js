@@ -1,7 +1,7 @@
-import { connectToDatabase } from 'lib/mongodb';
-import User from 'lib/models/User';
+import { connectToDatabase } from '@/lib/mongodb';
+import User from '@/lib/models/User';
 import bcrypt from 'bcryptjs';
-import { signJwt } from 'lib/auth';
+import { signJwt } from '@/lib/auth';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
