@@ -26,8 +26,13 @@ export default function RegisterPage() {
   function handleSubmit(e) {
     e.preventDefault();
     if (!validate()) return;
-    registerUser(form.name.trim(), form.email.trim());
-    router.push("/dashboard");
+     registerUser({
+    name: form.name.trim(),
+    email: form.email.trim(),
+    password: form.password.trim()
+  })
+    .then(() => router.push("/dashboard"))
+    .catch(err => setErrors({ form: err.message }));
   }
 
   return (
@@ -77,7 +82,7 @@ export default function RegisterPage() {
       </form>
 
       <p className="mt-4 text-sm text-slate-700">
-        Already have an account? <Link className="text-indigo-600 hover:underline" href="/login">Log in</Link>
+        Already have an account? <Link className="text-teal-400 hover:underline" href="/login">Log in</Link>
       </p>
     </section>
   );

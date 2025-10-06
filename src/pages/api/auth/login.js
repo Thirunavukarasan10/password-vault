@@ -30,7 +30,19 @@ export default async function handler(req, res) {
 
     const token = signJwt({ userId: user._id.toString() });
 
-    return res.status(200).json({ success: true, message: 'Logged in successfully', data: { token } });
+    // Return both token AND user data
+    return res.status(200).json({ 
+      success: true, 
+      message: 'Logged in successfully', 
+      data: { 
+        token,
+        user: {
+          id: user._id.toString(),
+          name: user.name,
+          email: user.email
+        }
+      } 
+    });
   } catch (err) {
     return res.status(500).json({ success: false, message: 'Internal Server Error', error: err?.message });
   }

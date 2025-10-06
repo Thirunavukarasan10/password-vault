@@ -1,32 +1,62 @@
-import Link from "next/link";
-import { useVault } from "../context/VaultContext";
+import Link from 'next/link';
+import { useVault } from '../context/VaultContext';
 
 export default function Navbar() {
   const { currentUser, logoutUser } = useVault();
 
   return (
-    <header className="sticky top-0 z-40 bg-white/80 backdrop-blur border-b border-slate-200">
-      <nav className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
-        <Link href="/" className="text-lg font-semibold text-slate-900">
-          <span className="text-indigo-600">Password</span> Vault
+    <nav style={{ 
+      padding: '1rem 2rem', 
+      background: '#f8f9fa', 
+      borderBottom: '1px solid #dee2e6',
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center'
+    }}>
+      <div>
+        <Link href="/" style={{ fontSize: '1.5rem', fontWeight: 'bold', textDecoration: 'none', color: '#6366f1' }}>
+          <span style={{ color: '#6366f1' }}>Password</span> Vault
         </Link>
-        <div className="flex items-center gap-3">
-          <Link className="px-3 py-2 text-sm rounded hover:bg-slate-100" href="/">Home</Link>
-          <Link className="px-3 py-2 text-sm rounded hover:bg-slate-100" href="/dashboard">Dashboard</Link>
-          {!currentUser && (
-            <>
-              <Link className="px-3 py-2 text-sm rounded hover:bg-slate-100" href="/login">Login</Link>
-              <Link className="px-3 py-2 text-sm rounded bg-indigo-600 text-white hover:bg-indigo-500" href="/register">Register</Link>
-            </>
-          )}
-          {currentUser && (
-            <div className="flex items-center gap-2">
-              <span className="hidden sm:inline text-sm text-slate-700">Hi, {currentUser.name}</span>
-              <button onClick={logoutUser} className="px-3 py-2 text-sm rounded bg-slate-900 text-white hover:bg-slate-700">Logout</button>
-            </div>
-          )}
-        </div>
-      </nav>
-    </header>
+      </div>
+      
+      <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
+        <Link href="/" style={{ textDecoration: 'none', color: '#374151' }}>
+          Home
+        </Link>
+        
+        {currentUser ? (
+          <>
+            <Link href="/dashboard" style={{ textDecoration: 'none', color: '#374151' }}>
+              Dashboard
+            </Link>
+            <span style={{ color: '#6b7280' }}>
+              Hi, {currentUser.name || currentUser.email || 'User'}
+            </span>
+            <button 
+              onClick={logoutUser}
+              style={{
+                padding: '0.5rem 1.5rem',
+                background: '#1f2937',
+                color: 'white',
+                border: 'none',
+                borderRadius: '0.375rem',
+                cursor: 'pointer'
+              }}
+            >
+              Logout
+            </button>
+          </>
+        ) : (
+          <>
+            <Link href="/login" style={{ textDecoration: 'none', color: '#374151' }}>
+              Login
+            </Link>
+            <Link href="/register" style={{ textDecoration: 'none', color: '#374151' }}>
+              Register
+            </Link>
+          </>
+        )}
+      </div>
+    </nav>
   );
 }

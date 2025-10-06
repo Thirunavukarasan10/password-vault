@@ -16,12 +16,19 @@ export default function LoginPage() {
 
   function handleSubmit(e) {
     e.preventDefault();
+    setError("");
+
     if (!form.email.trim() || !form.password.trim()) {
       setError("Please fill in both fields.");
       return;
     }
-    loginUser(form.email.trim());
-    router.push("/dashboard");
+
+    loginUser({
+      email: form.email.trim(),
+      password: form.password.trim(),
+    })
+      .then(() => router.push("/dashboard"))
+      .catch((err) => setError(err.message));
   }
 
   return (
@@ -53,13 +60,19 @@ export default function LoginPage() {
           />
         </div>
         {error && <p className="text-sm text-red-600">{error}</p>}
-        <button type="submit" className="mt-2 rounded bg-slate-900 text-white py-2.5 px-4 hover:bg-slate-700">
+        <button
+          type="submit"
+          className="mt-2 rounded bg-slate-900 text-white py-2.5 px-4 hover:bg-slate-700"
+        >
           Login
         </button>
       </form>
 
       <p className="mt-4 text-sm text-slate-700">
-        New here? <Link className="text-indigo-600 hover:underline" href="/register">Create an account</Link>
+        New here?{" "}
+        <Link className="hover:underline" href="/register">
+          Create an account
+        </Link>
       </p>
     </section>
   );
